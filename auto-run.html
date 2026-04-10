@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto-Run Dashboard Demo</title>
+    <script>
+        // Your credentials
+        const CONFIG = {
+            channelId: '3311497',
+            apiKey: 'HRMZHBSW76MI9FPZ',
+            fVoltage: '1',
+            fCurrent: '2',
+            fPower: '3',
+            fSOC: '6',
+            numResults: '50'
+        };
+
+        window.onload = function() {
+            console.log('Auto-running with credentials...');
+            
+            // Fill in the form
+            if (document.getElementById('channelId')) {
+                document.getElementById('channelId').value = CONFIG.channelId;
+                document.getElementById('apiKey').value = CONFIG.apiKey;
+                document.getElementById('fVoltage').value = CONFIG.fVoltage;
+                document.getElementById('fCurrent').value = CONFIG.fCurrent;
+                document.getElementById('fPower').value = CONFIG.fPower;
+                document.getElementById('fSOC').value = CONFIG.fSOC;
+                document.getElementById('numResults').value = CONFIG.numResults;
+                
+                console.log('Form filled! Click Fetch Data button...');
+                
+                // Auto-trigger fetch after 2 seconds
+                setTimeout(() => {
+                    console.log('Auto-fetching data...');
+                    document.getElementById('fetchBtn').click();
+                }, 2000);
+            }
+        };
+    </script>
+</head>
+<body>
+    <iframe src="index.html" style="width:100%; height:100vh; border:none;"></iframe>
+</body>
+</html>
