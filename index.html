@@ -747,7 +747,7 @@ async function predictEfficiency(soc, voltage, current, battery_temp, ambient_te
     if (!response.ok) throw new Error('Prediction API error');
     const result = await response.json();
     
-    document.getElementById('predictionValue').textContent = result.efficiency.toFixed(2);
+    document.getElementById('predictionValue').textContent = result.efficiency.toFixed(5);
     document.getElementById('predInputSOC').textContent = result.input.soc_abs.toFixed(2);
     document.getElementById('predInputV').textContent = result.input.voltage.toFixed(3);
     document.getElementById('predInputI').textContent = result.input.current.toFixed(3);
