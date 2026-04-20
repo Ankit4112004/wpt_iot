@@ -38,7 +38,7 @@ def predict_efficiency():
         prediction = max(min(prediction, 100), 0)
         
         return jsonify({
-            'efficiency': round(prediction, 2),
+            'efficiency': round(prediction, 5),
             'input': {
                 'soc_abs': round(soc_abs, 2),
                 'voltage': round(voltage, 3),
@@ -101,7 +101,7 @@ def predict_efficiency():
         prediction = max(min(prediction, 100), 0)
         
         return jsonify({
-            'efficiency': round(prediction, 2),
+            'efficiency': round(prediction, 5),
             'input': {
                 'soc_abs': soc_abs,
                 'voltage': voltage,
