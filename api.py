@@ -23,7 +23,7 @@ def predict_efficiency():
         soc_abs = abs(float(data.get('soc', 0)))
         voltage = float(data.get('voltage', 0))
         current = abs(float(data.get('current', 0)))
-        battery_temp = float(data.get('battery_temp', 43))
+        battery_temp = 43
         ambient_temp = float(data.get('ambient_temp', 25))
         
         prediction = (
@@ -87,7 +87,7 @@ def predict_efficiency():
         soc_abs = abs(float(data.get('soc', 0)))
         voltage = float(data.get('voltage', 0))
         current = float(data.get('current', 0))
-        battery_temp = float(data.get('battery_temp', 0))
+        battery_temp = 43
         ambient_temp = float(data.get('ambient_temp', 0))
         
         # Create feature array in correct order
