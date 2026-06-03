@@ -3,7 +3,7 @@ services:
     name: ev-wpt-api
     runtime: python
     plan: free
-    buildCommand: "pip install -r ml/requirements.txt -r webdev/backend/requirements.txt && cd ml && python train.py"
+    buildCommand: "pip install -r ml/requirements.txt -r webdev/backend/requirements.txt && cd ml && python get_data.py && python train.py"
     startCommand: "cd webdev/backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
     envVars:
       - key: PYTHON_VERSION
