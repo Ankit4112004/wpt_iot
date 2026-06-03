@@ -15,6 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy import select, desc
+from sqlalchemy.orm import joinedload
 
 import config
 from db import SessionLocal, init_db, Channel, Reading, Prediction, Alert
@@ -65,7 +66,7 @@ def health():
 def latest_reading():
     """Newest reading + its ML prediction + how stale it is (for the 'last updated' label)."""
     with SessionLocal() as s:
-        r = s.scalar(select(Reading).order_by(desc(Reading.id)).limit(1))
+        r = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
         if not r:
             return {"available": False}
         p = r.prediction
@@ -88,7 +89,7 @@ def readings(limit: int = 100):
     """Recent readings (oldest -> newest) with predicted temperature, for the charts."""
     limit = max(1, min(limit, 500))
     with SessionLocal() as s:
-        rows = s.scalars(select(Reading).order_by(desc(Reading.id)).limit(limit)).all()
+        rows = s.scalars(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(limit)).all()
         rows = list(reversed(rows))
         return [{
             "ts": r.ts.isoformat(),
@@ -113,8 +114,8 @@ def alerts(limit: int = 20):
 def summary():
     """Headline KPIs for the dashboard top bar."""
     with SessionLocal() as s:
-        latest = s.scalar(select(Reading).order_by(desc(Reading.id)).limit(1))
-        recent = s.scalars(select(Reading).order_by(desc(Reading.id)).limit(100)).all()
+        latest = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
+        recent = s.scalars(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(100)).all()
         n_alerts = s.scalar(select(Alert).order_by(desc(Alert.id)).limit(1))
         temps = [r.prediction.predicted_temp for r in recent if r.prediction]
         powers = [r.power for r in recent]
