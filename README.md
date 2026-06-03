@@ -1,235 +1,79 @@
-# EV WPT Monitor — Dashboard with ML Predictions
+# EV Wireless Power Transfer (WPT) Monitor
 
-A real-time Wireless Power Transfer monitoring dashboard pulling live data from ThingSpeak with integrated machine learning predictions for battery efficiency.
+A full-stack, real-time telemetry dashboard for Wireless Power Transfer (WPT) EV charging. It ingests live electrical data (Voltage, Current, Power, SOC) from ThingSpeak, processes it through 3 custom Machine Learning models (Soft-Sensor Temperature, Anomaly Detection, Battery Health), and displays it on a premium React/Tailwind dashboard.
 
-## Features
-
-✅ **Live Dashboard**
-- Real-time metrics: Voltage, Current, Power, State of Charge
-- Interactive charts (Voltage, Current, Power, SOC over time)
-- Data table with raw feed logs
-- Corner popup notifications for data updates
-- Status indicators and connectivity monitoring
-
-✅ **ML Efficiency Prediction** (NEW)
-- Trained RandomForest model on Li-ion battery data
-- Predicts efficiency based on: SOC, Voltage, Current, Battery Temp, Ambient Temp
-- Real-time predictions display on dashboard
-
-✅ **Responsive Design**
-- Dark theme (cyberpunk/tech aesthetic)
-- Mobile-friendly layout
-- Smooth animations and transitions
+![Dashboard Screenshot](/path/to/screenshot.png) <!-- Add a screenshot here later! -->
 
 ---
 
-## Quick Start
+## 🏗️ Architecture
 
-### 1. Setup Python Environment
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Train ML model (one-time)
-python train_model.py
-
-# Start API server
-python api.py
-```
-
-The API will run on `http://localhost:5000`
-
-### 2. Open Dashboard
-
-Go to **`index.html`** in your browser or deploy to Vercel:
-```bash
-git add .
-git commit -m "Add ML predictions"
-git push
-```
-
-Visit: **`https://wpt-iot.vercel.app`** (or your Vercel URL)
-
----
-
-## Configuration
-
-### ThingSpeak Setup
-
-1. Create/configure your ThingSpeak channel with fields:
-   - Field 1: Voltage (V)
-   - Field 2: Current (A)
-   - Field 3: Power (W)
-   - Field 4: Battery Temperature (°C)
-   - Field 5: Ambient Temperature (°C)
-   - Field 6: State of Charge (%)
-
-2. In the dashboard:
-   - Enter your **Channel ID**
-   - Enter your **Read API Key**
-   - Map fields to corresponding metrics
-   - Click **"Fetch Data"**
-
-### Field Mapping Example
-
-```
-Voltage → Field 1
-Current → Field 2
-Power → Field 3
-SOC → Field 6
-Battery Temp → Field 4 (used for predictions)
-Ambient Temp → Field 5 (used for predictions)
+```mermaid
+flowchart LR
+    A[MATLAB / Simulink] -->|Live Feed| B(ThingSpeak)
+    B -->|Ingest Worker| C{Backend API<br/>FastAPI}
+    C -->|Store| D[(PostgreSQL)]
+    C <-->|ML Inference| E[Scikit-Learn<br/>Models]
+    C -->|REST / JSON| F[Frontend<br/>React + Tailwind]
 ```
 
 ---
 
-## Files
+## 🧠 The 3-Tier Data Resolver (Fail-Safe Ingestion)
 
-- **`index.html`** — Main dashboard (deployed to Vercel)
-- **`api.py`** — Flask backend for ML predictions (run locally)
-- **`train_model.py`** — ML model trainer (creates model.pkl & scaler.pkl)
-- **`battery_efficiency_model.py`** — Detailed ML analysis script
-- **`evdata2.csv`** — Training dataset (Li-ion battery charging data)
-- **`requirements.txt`** — Python dependencies
+The backend ingestion worker runs on an APScheduler every 3 seconds and utilizes an intelligent **3-Tier Data Resolution** strategy to ensure the dashboard *never* crashes, even if the internet drops or MATLAB is stopped.
 
----
-
-## How It Works
-
-### Dashboard Flow
-1. User enters ThingSpeak credentials
-2. Clicks **"Fetch Data"** or enables **"Auto (30s)"**
-3. Dashboard fetches latest data from ThingSpeak API
-4. Metrics cards update with live values
-5. Charts display historical trends
-6. **Bottom-right popup** shows data update notification
-7. **ML Prediction Panel** displays predicted efficiency
-
-### ML Prediction Flow
-1. Dashboard extracts: SOC, Voltage, Current, Battery Temp, Ambient Temp
-2. Sends data to local API (`http://localhost:5000/api/predict`)
-3. API scales data using trained scaler
-4. RandomForest model predicts efficiency
-5. Prediction displayed in panel below metrics
+1. 🟢 **LIVE (ThingSpeak)**: If fresh data arrives from ThingSpeak, the system scales the pack-level data down to cell-level, runs inference, and displays a green "Live" badge.
+2. 🟡 **REPLAY (Demo Mode)**: If live data is unavailable, it automatically falls back to streaming a seeded, realistic charge-cycle from a local CSV (`nev_battery_charging.csv`). This is your interview safety-net!
+3. 🔴 **LAST-KNOWN**: If the system detects a stall, it simply serves the most recent stored DB row and turns the badge Red, showing exactly how stale the data is.
 
 ---
 
-## Model Details
+## 🎙️ Interview Talking Points
 
-- **Algorithm**: Random Forest Regressor (100 trees)
-- **Training Data**: Li-ion batteries from evdata2.csv
-- **Features**:
-  - abs(SOC) — Absolute State of Charge (%)
-  - Voltage (V)
-  - Current (A)
-  - Battery Temperature (°C)
-  - Ambient Temperature (°C)
-- **Target**: Efficiency (%)
-- **Performance**: ~98% R² score on test data
+### 1. The Machine Learning Pipeline (`ml/`)
+- **What it does**: We trained 3 models on NASA Li-ion battery datasets: a Temperature Soft-Sensor, an Anomaly Detector, and a Battery Health Classifier.
+- **Why it matters**: We don't rely on physical temperature sensors. The soft-sensor *predicts* temperature entirely from the electrical signals (Voltage, Current, Time). This predicted temperature is then fed into the Anomaly model.
+- **The "Pack to Cell" fix**: The ML models were trained on 3.7V cell data, but our live ThingSpeak data is ~390V pack data. Before running inference on live data, the backend normalizes the Pack data down to Cell-level by dividing by the number of series/parallel cells.
 
----
+### 2. The Backend (`webdev/backend/`)
+- **What it does**: A high-performance FastAPI application connected to a PostgreSQL database using SQLAlchemy.
+- **Why it matters**: It acts as a strict boundary between ThingSpeak and the Frontend. The React app *never* talks to ThingSpeak directly. This allows us to persist every single reading locally and run heavy ML inference on the server without freezing the user's browser.
+- **The Schema**: 4 simple tables: `channels` (hides credentials), `readings` (raw telemetry), `predictions` (the ML output), and `alerts` (system warnings).
 
-## Deployment
-
-### Option 1: Vercel (Recommended for Dashboard)
-
-```bash
-# Rename file for Vercel routing
-mv minor_project.html index.html
-
-# Push to GitHub
-git add .
-git commit -m "Deploy to Vercel with ML predictions"
-git push
-
-# Go to Vercel dashboard → Import repository → Deploy
-```
-
-⚠️ **Note**: The ML API (`api.py`) must run locally to provide predictions. 
-The dashboard will still work without it, but predictions won't display.
-
-### Option 2: Full Stack Deployment
-
-For production with API predictions, use:
-- **Frontend**: Vercel (index.html)
-- **Backend**: Heroku, Railway, or DigitalOcean (api.py)
+### 3. The Frontend (`webdev/frontend/`)
+- **What it does**: A React Single Page Application (SPA) built with Vite, styled with Tailwind CSS v4, and using Framer Motion for elegant entrance animations.
+- **Why it matters**: It's completely decoupled from the backend. It just polls the FastAPI endpoints (`/api/readings/latest`). It uses a strict, premium "shadcn" aesthetic (Zinc dark mode) for a highly professional look, far beyond standard bootstrap dashboards.
 
 ---
 
-## Usage Example
+## 🚀 Deployment Guide
 
-### Manual Data Fetch
-1. Enter Channel ID: `2345678`
-2. Enter API Key: `XXXXXXXXXXXX`
-3. Select Fields:
-   - Voltage → Field 1
-   - Current → Field 2
-   - Power → Field 3
-   - SOC → Field 6
-4. Click **"Fetch Data"**
-5. View metrics, charts, and predictions
+Everything is configured to deploy for free across 3 platforms: **Neon** (Database), **Render** (Backend), and **Vercel** (Frontend).
 
-### Auto-Refresh
-1. Click **"Auto (30s)"** button
-2. Dashboard fetches and predicts every 30 seconds
-3. Notifications popup for each update
-4. Click **"Stop Auto"** to disable
+### 1. Neon (PostgreSQL Database)
+1. Go to [neon.tech](https://neon.tech/) and sign up.
+2. Create a new project (e.g., `ev-wpt-db`).
+3. On the dashboard, find your **Connection String** (it starts with `postgresql://`). Copy this.
 
----
+### 2. Render (Backend API)
+1. Go to [render.com](https://render.com/) and sign up with GitHub.
+2. Click **New +** -> **Web Service**.
+3. Connect your GitHub repository.
+4. Render will automatically read the `render.yaml` file in this repository and configure everything!
+5. **CRITICAL**: Go to the "Environment" tab of your new Web Service on Render and add the following Environment Variables:
+   - `DATABASE_URL` = (Paste your Neon connection string here)
+   - `THINGSPEAK_CHANNEL` = (Your ThingSpeak Channel ID, e.g., `3311497`)
+   - `THINGSPEAK_READ_KEY` = (Your ThingSpeak Read API Key)
+6. Click Save. Render will build the project, train the ML models, and start FastAPI. Copy your Render URL (e.g., `https://ev-wpt-api.onrender.com`).
 
-## Troubleshooting
+### 3. Vercel (Frontend Dashboard)
+1. Go to [vercel.com](https://vercel.com/) and sign up with GitHub.
+2. Click **Add New Project** and select this GitHub repository.
+3. In the "Framework Preset" dropdown, Vercel should auto-detect **Vite**.
+4. **Root Directory**: Click Edit and type `webdev/frontend`. This tells Vercel where the React app lives.
+5. Expand "Environment Variables" and add:
+   - `VITE_API_URL` = (Paste your Render backend URL here, e.g., `https://ev-wpt-api.onrender.com`)
+6. Click **Deploy**.
 
-### API Connection Error
-```
-⚠ API unavailable (run: python api.py)
-```
-**Solution**: Start the Flask API server in a terminal:
-```bash
-python api.py
-```
-
-### ThingSpeak.html Connection Error
-```
-Error: Invalid channel or API key
-```
-**Solution**: 
-- Verify Channel ID is correct
-- Verify API key has read permissions
-- Check channel has data
-
-### Dashboard Not Updating
-- Ensure auto-refresh is enabled
-- Check browser console for errors
-- Verify ThingSpeak connectivity
-
----
-
-## Technologies Used
-
-- **Frontend**: HTML5, CSS3, JavaScript (vanilla)
-- **Backend**: Python Flask, scikit-learn
-- **Database**: ThingSpeak IoT cloud
-- **Hosting**: Vercel (frontend), Local (backend)
-- **ML Library**: scikit-learn (RandomForest, StandardScaler)
-
----
-
-## License
-
-Open source project for EV WPT monitoring and research.
-
----
-
-## Support
-
-For issues or questions:
-1. Check the configuration section above
-2. Review browser console errors (F12 → Console)
-3. Ensure Python dependencies are installed
-4. Verify ThingSpeak channel connectivity
-
----
-
-**Last Updated**: April 11, 2026
-**Version**: 1.1 (with ML predictions)
+🎉 You are live!

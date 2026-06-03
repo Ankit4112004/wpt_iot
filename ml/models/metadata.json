@@ -1,0 +1,24 @@
+{
+  "instant_features": [
+    "Voltage_measured",
+    "Current_measured",
+    "Power",
+    "Time"
+  ],
+  "cycle_features": [
+    "v_mean",
+    "v_min",
+    "i_mean",
+    "duration",
+    "temp_max",
+    "temp_mean"
+  ],
+  "anomaly_features": [
+    "Voltage_measured",
+    "Current_measured",
+    "Power",
+    "Temperature_measured"
+  ],
+  "health_threshold": 1.5596947155156364,
+  "dataset": "NASA Li-ion Battery Aging (B0005/06/07/18)"
+}
