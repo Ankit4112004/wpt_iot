@@ -86,12 +86,20 @@ export default function App() {
   let badgeColor = "text-emerald-500 border-emerald-500/20";
   let dotColor = "bg-emerald-500";
   let badgeText = "Live (ThingSpeak)";
+  let dotPulse = false;
 
-  if (!online) {
+  if (latest == null) {
+    // No data yet: first load, or the free-tier backend is cold-starting (~50s).
+    // Reads as intentional instead of looking broken, and we keep retrying via the poller.
+    badgeColor = "text-amber-500 border-amber-500/20";
+    dotColor = "bg-amber-500";
+    badgeText = online ? "Connecting…" : "Waking up server… (~50s on first load)";
+    dotPulse = true;
+  } else if (!online) {
     badgeColor = "text-red-500 border-red-500/20";
     dotColor = "bg-red-500";
     badgeText = "Offline";
-  } else if (totalSecondsAgo > 10) { 
+  } else if (totalSecondsAgo > 10) {
     // If it's older than 10s, it's a LAST-KNOWN value because ingestion didn't write a new row
     badgeColor = "text-red-500 border-red-500/20";
     dotColor = "bg-red-500";
@@ -120,7 +128,7 @@ export default function App() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className={`flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-xs font-medium shadow-sm ${badgeColor}`}>
-            <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+            <span className={`w-2 h-2 rounded-full ${dotColor} ${dotPulse ? "animate-pulse" : ""}`} />
             {badgeText}
           </div>
           <button 
