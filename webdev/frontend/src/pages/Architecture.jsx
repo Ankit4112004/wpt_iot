@@ -9,7 +9,7 @@ const STACK = [
 
 export default function Architecture() {
   return (
-    <div className="space-y-8 pb-16 max-w-4xl">
+    <div className="space-y-8 pb-16">
       <header className="border-b pb-6">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">System Architecture</h1>
         <p className="mt-2 text-muted-foreground">Data pipeline from the battery telemetry to the monitoring dashboard.</p>
