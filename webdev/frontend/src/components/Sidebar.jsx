@@ -23,7 +23,6 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: I.home, end: true },
   { to: "/whatif", label: "What-if", icon: I.sliders },
   { to: "/models", label: "Models", icon: I.cpu },
-  { to: "/architecture", label: "Architecture", icon: I.network },
 ];
 
 export default function Sidebar() {
@@ -31,7 +30,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`shrink-0 border-r bg-card flex flex-col transition-all duration-300 ${open ? "w-60" : "w-16"}`}
+      className={`sticky top-0 h-screen z-50 shrink-0 border-r bg-card flex flex-col transition-all duration-300 ${open ? "w-60" : "w-16"}`}
     >
       {/* logo + toggle */}
       <div className="flex items-center gap-3 h-16 px-3 border-b">
@@ -77,17 +76,21 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* footer link to API docs */}
-      <a
-        href={(import.meta.env.VITE_API_BASE || "") + "/docs"}
-        target="_blank"
-        rel="noreferrer"
-        title="API Docs"
-        className="flex items-center gap-3 px-4 h-11 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors border-t"
+      {/* footer link to Architecture */}
+      <NavLink
+        to="/architecture"
+        title="Architecture"
+        className={({ isActive }) =>
+          `flex items-center gap-3 px-4 h-11 transition-colors border-t ${
+            isActive
+              ? "text-foreground bg-accent border-l-2 border-blue-500"
+              : "text-muted-foreground hover:text-foreground hover:bg-accent border-l-2 border-transparent"
+          }`
+        }
       >
-        <Icon d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
-        {open && <span className="text-xs">API Docs</span>}
-      </a>
+        <Icon d={I.network} />
+        {open && <span className="text-xs">Architecture</span>}
+      </NavLink>
     </aside>
   );
 }
