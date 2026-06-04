@@ -34,12 +34,8 @@ export default function Sidebar() {
     >
       {/* logo + toggle */}
       <div className="flex items-center gap-3 h-16 px-3 border-b">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-secondary/50 text-foreground shrink-0 shadow-sm">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 7h12a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z"/>
-            <path d="M22 11v2"/>
-            <path d="M11 10l-2 4h4l-2 4"/>
-          </svg>
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-secondary/50 text-foreground font-bold text-sm shrink-0 shadow-sm">
+          EV
         </div>
         {open && (
           <div className="min-w-0">

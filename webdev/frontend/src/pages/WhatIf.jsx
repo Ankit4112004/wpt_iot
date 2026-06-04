@@ -2,7 +2,7 @@ import WhatIfPanel from "../components/WhatIfPanel.jsx";
 
 export default function WhatIf() {
   return (
-    <div className="space-y-8 pb-16">
+    <div className="space-y-8 pb-16 mx-auto max-w-5xl">
       <header className="border-b pb-6">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">What-if Predictor</h1>
         <p className="mt-2 text-muted-foreground">
