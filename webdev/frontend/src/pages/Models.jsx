@@ -41,36 +41,34 @@ const MODELS = [
 
 function ModelCard({ m }) {
   return (
-    <div className="group relative rounded-2xl border border-white/5 bg-card text-card-foreground shadow-lg overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-1.5" style={{ borderTop: `4px solid ${m.accent}` }}>
-      <div 
-        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none"
-        style={{ background: `radial-gradient(circle at top right, ${m.accent}, transparent 70%)` }}
-      />
-      <div className="p-6">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className="flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm">
+      <div className="p-5 border-b flex items-start justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: m.accent }} />
           <div>
-            <h3 className="font-semibold tracking-tight text-lg group-hover:text-foreground transition-colors">{m.name}</h3>
-            <p className="text-xs text-muted-foreground mt-1 tracking-wide uppercase">{m.type}</p>
+            <h3 className="font-semibold text-base">{m.name}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{m.type}</p>
           </div>
-          <span 
-            className="text-xs font-semibold px-3 py-1.5 rounded-full border shadow-sm" 
-            style={{ color: m.accent, borderColor: `${m.accent}40`, backgroundColor: `${m.accent}10` }}
-          >
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium px-2.5 py-1 rounded bg-secondary text-secondary-foreground border">
             {m.metric}
           </span>
         </div>
-        <dl className="mt-6 space-y-4 text-sm leading-relaxed relative z-10">
-          <div className="p-3 rounded-lg bg-secondary/30 border border-border/50">
-            <dt className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">What it does</dt>
-            <dd className="text-foreground/90">{m.what}</dd>
+      </div>
+      <div className="p-5 flex-1">
+        <dl className="space-y-4 text-sm">
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground mb-1">Function</dt>
+            <dd className="text-foreground leading-relaxed">{m.what}</dd>
           </div>
-          <div className="px-1">
-            <dt className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Why & How</dt>
-            <dd className="text-muted-foreground">{m.why}</dd>
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground mb-1">Rationale</dt>
+            <dd className="text-muted-foreground leading-relaxed">{m.why}</dd>
           </div>
-          <div className="px-1">
-            <dt className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">Used for</dt>
-            <dd className="text-muted-foreground">{m.use}</dd>
+          <div>
+            <dt className="text-xs font-medium text-muted-foreground mb-1">Application</dt>
+            <dd className="text-muted-foreground leading-relaxed">{m.use}</dd>
           </div>
         </dl>
       </div>
