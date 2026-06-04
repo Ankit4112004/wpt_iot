@@ -59,5 +59,10 @@ def run_inference(voltage, current, time_in_cycle):
     }
 
 
+def what_if(voltage, current, time_in_cycle=1800.0):
+    """Interactive on-demand prediction (used by the /api/whatif endpoint)."""
+    return M.whatif(voltage, current, time_in_cycle)
+
+
 def models_ready():
     return M.MODELS_LOADED

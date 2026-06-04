@@ -5,6 +5,7 @@ import MetricCard from "./components/MetricCard.jsx";
 import TempGauge from "./components/TempGauge.jsx";
 import AlertsPanel from "./components/AlertsPanel.jsx";
 import TimeChart from "./components/TimeChart.jsx";
+import WhatIfPanel from "./components/WhatIfPanel.jsx";
 
 const POLL_MS = 3000;
 
@@ -178,6 +179,10 @@ export default function App() {
         <motion.section className="grid grid-cols-1 gap-4 lg:grid-cols-2" variants={item}>
           <TempGauge temp={latest?.predicted_temp} limit={38} />
           <AlertsPanel alerts={alerts} />
+        </motion.section>
+
+        <motion.section variants={item}>
+          <WhatIfPanel />
         </motion.section>
 
         {/* charts */}

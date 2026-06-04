@@ -60,3 +60,38 @@ def predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
     return {"degraded": bool(degraded),
             "label": "Degraded" if degraded else "Healthy",
             "degraded_probability": round(proba, 3)}
+
+
+def predict_temperature_ci(voltage, current, time_in_cycle=0.0):
+    """
+    Temperature prediction PLUS a +/- confidence band.
+
+    A Random Forest is many trees that each make their own guess. The final prediction is
+    their average; the SPREAD (standard deviation) of those guesses is a natural confidence:
+    trees agreeing -> tight band; trees disagreeing -> wide band.
+    Returns (mean_temp, std).
+    """
+    power = voltage * current
+    X = np.array([[voltage, current, power, time_in_cycle]])
+    tree_preds = np.array([t.predict(X)[0] for t in _temp.estimators_])
+    return round(float(tree_preds.mean()), 2), round(float(tree_preds.std()), 2)
+
+
+def whatif(voltage, current, time_in_cycle=1800.0):
+    """
+    On-demand 'what-if' prediction for the interactive panel (not stored in the DB).
+    Given electrical inputs, return all 3 models' outputs + the temperature confidence.
+    """
+    temp, conf = predict_temperature_ci(voltage, current, time_in_cycle)
+    anom = detect_anomaly(voltage, current, temp)
+    # Single point has no real cycle, so summarise it as a one-sample cycle for the
+    # health model (good enough for an interactive demo).
+    health = predict_health(voltage, voltage, current, time_in_cycle, temp, temp)
+    return {
+        "predicted_temp": temp,
+        "temp_confidence": conf,
+        "is_anomaly": anom["is_anomaly"],
+        "anomaly_score": anom["score"],
+        "health_label": health["label"],
+        "degraded_probability": health["degraded_probability"],
+    }

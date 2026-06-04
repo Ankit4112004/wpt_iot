@@ -20,7 +20,7 @@ from sqlalchemy.orm import joinedload
 import config
 from db import SessionLocal, init_db, Channel, Reading, Prediction, Alert
 from ingest import tick
-from inference import models_ready
+from inference import models_ready, what_if
 
 scheduler = BackgroundScheduler(daemon=True)
 
@@ -97,6 +97,17 @@ def readings(limit: int = 100):
             "power": round(r.power, 2), "soc": round(r.soc, 2),
             "predicted_temp": r.prediction.predicted_temp if r.prediction else None,
         } for r in rows]
+
+
+@app.get("/api/whatif")
+def whatif(voltage: float, current: float, time_in_cycle: float = 1800.0):
+    """Interactive 'what-if': given electrical inputs, return the live ML outputs.
+
+    Not stored in the DB — it's an on-demand prediction for the dashboard's slider panel.
+    Inputs are per-cell values (the model's native range): voltage ~2.5-4.2 V,
+    current negative for discharge.
+    """
+    return what_if(voltage, current, time_in_cycle)
 
 
 @app.get("/api/alerts")

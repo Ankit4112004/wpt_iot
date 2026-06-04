@@ -14,4 +14,6 @@ export const api = {
   series: (n = 120) => getJSON(`/api/readings?limit=${n}`),
   alerts: () => getJSON("/api/alerts?limit=10"),
   summary: () => getJSON("/api/analytics/summary"),
+  whatif: (voltage, current, time = 1800) =>
+    getJSON(`/api/whatif?voltage=${voltage}&current=${current}&time_in_cycle=${time}`),
 };
