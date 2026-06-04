@@ -40,7 +40,7 @@ def main():
     print(f"  {len(df):,} raw measurements, batteries: {sorted(df['Battery'].unique())}")
 
     # ---------- Model 1: Temperature soft-sensor (regression) ----------
-    print("\n[1/3] Training temperature soft-sensor (regression) ...")
+    print("\n[1/4] Training temperature soft-sensor (regression) ...")
     X_inst, y_temp = F.build_instant_table(df)
     # max_depth / min_samples_leaf bound the tree size: keeps the saved model a few MB
     # (deployable) instead of ~2 GB, with no real accuracy loss since temperature is smooth.
@@ -54,7 +54,7 @@ def main():
     print(f"  features: {F.INSTANT_FEATURES}  ->  Temperature (C)")
 
     # ---------- Model 2: Battery-health classifier (classification) ----------
-    print("\n[2/3] Training battery-health classifier (classification) ...")
+    print("\n[2/4] Training battery-health classifier (classification) ...")
     cyc = F.build_cycle_table(df)
     health_model = RandomForestClassifier(
         n_estimators=120, random_state=42, n_jobs=-1, class_weight="balanced"
@@ -64,8 +64,18 @@ def main():
     print(f"  features: {F.CYCLE_FEATURES}  ->  degraded (0/1)")
     print(f"  health capacity threshold: {cyc.attrs['health_threshold']:.4f} Ah")
 
+    # ---------- Model 4: Remaining Useful Life (regression) ----------
+    print("\n[4/4] Training remaining-useful-life regressor (regression) ...")
+    rul = F.build_rul_table(df)
+    rul_model = RandomForestRegressor(
+        n_estimators=120, max_depth=12, min_samples_leaf=5, random_state=42, n_jobs=-1
+    )
+    rul_model.fit(rul[F.CYCLE_FEATURES].values, rul["RUL"].values)
+    joblib.dump(rul_model, os.path.join(MODELS_DIR, "rul_regressor.pkl"))
+    print(f"  features: {F.CYCLE_FEATURES}  ->  remaining cycles (EOL @ {F.EOL_CAPACITY} Ah)")
+
     # ---------- Model 3: Anomaly detector (unsupervised) ----------
-    print("\n[3/3] Training anomaly detector (unsupervised) ...")
+    print("\n[3/4] Training anomaly detector (unsupervised) ...")
     # Learns the normal operating envelope of voltage/current/power/temperature.
     anom_features = ["Voltage_measured", "Current_measured", "Power", "Temperature_measured"]
     anom_model = IsolationForest(
@@ -81,12 +91,13 @@ def main():
         "cycle_features": F.CYCLE_FEATURES,
         "anomaly_features": anom_features,
         "health_threshold": cyc.attrs["health_threshold"],
+        "eol_capacity": F.EOL_CAPACITY,
         "dataset": "NASA Li-ion Battery Aging (B0005/06/07/18)",
     }
     with open(os.path.join(MODELS_DIR, "metadata.json"), "w") as f:
         json.dump(meta, f, indent=2)
 
-    print("\nSaved 3 models + metadata.json to ml/models/")
+    print("\nSaved 4 models + metadata.json to ml/models/")
 
 
 if __name__ == "__main__":

@@ -27,11 +27,12 @@ try:
     _temp = _load("temperature_regressor.pkl")
     _health = _load("health_classifier.pkl")
     _anom = _load("anomaly_detector.pkl")
+    _rul = _load("rul_regressor.pkl")
     with open(os.path.join(MODELS_DIR, "metadata.json")) as f:
         META = json.load(f)
     MODELS_LOADED = True
 except FileNotFoundError:
-    _temp = _health = _anom = None
+    _temp = _health = _anom = _rul = None
     META = {}
     MODELS_LOADED = False
 
@@ -62,6 +63,12 @@ def predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
             "degraded_probability": round(proba, 3)}
 
 
+def predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
+    """Estimate Remaining Useful Life = charge cycles left before end-of-life."""
+    X = np.array([[v_mean, v_min, i_mean, duration, temp_max, temp_mean]])
+    return max(0, int(round(float(_rul.predict(X)[0]))))
+
+
 def predict_temperature_ci(voltage, current, time_in_cycle=0.0):
     """
     Temperature prediction PLUS a +/- confidence band.
@@ -87,6 +94,7 @@ def whatif(voltage, current, time_in_cycle=1800.0):
     # Single point has no real cycle, so summarise it as a one-sample cycle for the
     # health model (good enough for an interactive demo).
     health = predict_health(voltage, voltage, current, time_in_cycle, temp, temp)
+    rul = predict_rul(voltage, voltage, current, time_in_cycle, temp, temp)
     return {
         "predicted_temp": temp,
         "temp_confidence": conf,
@@ -94,4 +102,5 @@ def whatif(voltage, current, time_in_cycle=1800.0):
         "anomaly_score": anom["score"],
         "health_label": health["label"],
         "degraded_probability": health["degraded_probability"],
+        "predicted_rul": rul,
     }

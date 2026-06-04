@@ -66,6 +66,7 @@ class Prediction(Base):
     anomaly_score: Mapped[float] = mapped_column(Float, default=0.0)
     health_label: Mapped[str] = mapped_column(String(16), default="Healthy")
     degraded_probability: Mapped[float] = mapped_column(Float, default=0.0)
+    predicted_rul: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     reading: Mapped["Reading"] = relationship(back_populates="prediction")
 
@@ -81,5 +82,22 @@ class Alert(Base):
 
 
 def init_db():
-    """Create all tables if they don't exist."""
+    """Create all tables if they don't exist, then apply small additive migrations."""
     Base.metadata.create_all(engine)
+    _ensure_columns()
+
+
+def _ensure_columns():
+    """
+    Lightweight migration: create_all() won't ADD columns to a table that already exists
+    (e.g. the live Postgres DB from an earlier deploy). So we check for any new columns and
+    ALTER them in. Works on both SQLite and Postgres. Avoids needing a migration tool here.
+    """
+    from sqlalchemy import inspect, text
+    insp = inspect(engine)
+    existing = {c["name"] for c in insp.get_columns("predictions")}
+    additions = {"predicted_rul": "FLOAT DEFAULT 0"}
+    with engine.begin() as conn:
+        for col, ddl in additions.items():
+            if col not in existing:
+                conn.execute(text(f"ALTER TABLE predictions ADD COLUMN {col} {ddl}"))

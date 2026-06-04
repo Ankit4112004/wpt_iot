@@ -20,5 +20,6 @@
     "Temperature_measured"
   ],
   "health_threshold": 1.5596947155156364,
+  "eol_capacity": 1.4,
   "dataset": "NASA Li-ion Battery Aging (B0005/06/07/18)"
 }

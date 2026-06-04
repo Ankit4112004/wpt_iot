@@ -41,14 +41,14 @@ def run_inference(voltage, current, time_in_cycle):
     cs = [w["i"] for w in _window]
     ts = [w["t"] for w in _window]
     times = [w["time"] for w in _window]
-    health = M.predict_health(
-        v_mean=sum(vs) / len(vs),
-        v_min=min(vs),
-        i_mean=sum(cs) / len(cs),
-        duration=max(times) - min(times) if len(times) > 1 else times[0],
-        temp_max=max(ts),
-        temp_mean=sum(ts) / len(ts),
-    )
+    # The same per-cycle summary feeds BOTH the health classifier and the RUL regressor.
+    v_mean, v_min = sum(vs) / len(vs), min(vs)
+    i_mean = sum(cs) / len(cs)
+    duration = max(times) - min(times) if len(times) > 1 else times[0]
+    temp_max, temp_mean = max(ts), sum(ts) / len(ts)
+
+    health = M.predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
+    rul = M.predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
 
     return {
         "predicted_temp": temp,
@@ -56,6 +56,7 @@ def run_inference(voltage, current, time_in_cycle):
         "anomaly_score": anom["score"],
         "health_label": health["label"],
         "degraded_probability": health["degraded_probability"],
+        "predicted_rul": rul,
     }
 
 

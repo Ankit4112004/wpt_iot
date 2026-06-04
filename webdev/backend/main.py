@@ -81,6 +81,7 @@ def latest_reading():
             "is_anomaly": p.is_anomaly if p else None,
             "health_label": p.health_label if p else None,
             "degraded_probability": p.degraded_probability if p else None,
+            "predicted_rul": p.predicted_rul if p else None,
         }
 
 

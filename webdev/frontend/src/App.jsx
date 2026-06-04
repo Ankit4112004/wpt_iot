@@ -166,6 +166,9 @@ export default function App() {
           <div className="rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card text-muted-foreground">
             Avg power: <b className="text-foreground">{summary?.avg_power_recent ?? "—"} W</b>
           </div>
+          <div className="rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card text-muted-foreground">
+            RUL: <b className="text-foreground">{latest?.predicted_rul ?? "—"} cycles</b>
+          </div>
         </motion.section>
 
         {/* metric cards + temperature gauge */}

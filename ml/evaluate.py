@@ -75,6 +75,20 @@ def evaluate_health(df):
     return res
 
 
+def evaluate_rul(df):
+    """Score RUL with GroupKFold by battery (tested on cells it never trained on)."""
+    rul = F.build_rul_table(df)
+    X, y, groups = rul[F.CYCLE_FEATURES], rul["RUL"], rul["Battery"]
+    n = groups.nunique()
+    gkf = GroupKFold(n_splits=n)
+    m = RandomForestRegressor(n_estimators=120, max_depth=12, min_samples_leaf=5,
+                              random_state=42, n_jobs=-1)
+    pred = cross_val_predict(m, X, y, cv=gkf, groups=groups)
+    return {"r2": round(float(r2_score(y, pred)), 4),
+            "mae_cycles": round(float(mean_absolute_error(y, pred)), 2),
+            "batteries_used": int(n)}
+
+
 def evaluate_anomaly(df):
     """Anomaly detection is unsupervised, so we report how much it flags (the rate)."""
     from sklearn.ensemble import IsolationForest
@@ -108,6 +122,7 @@ def main():
     metrics = {
         "temperature_soft_sensor": evaluate_temperature(df),
         "battery_health_classifier": evaluate_health(df),
+        "remaining_useful_life": evaluate_rul(df),
         "anomaly_detector": evaluate_anomaly(df),
     }
     with open(os.path.join(REPORTS, "metrics.json"), "w") as f:

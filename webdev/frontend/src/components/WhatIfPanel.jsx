@@ -80,7 +80,11 @@ export default function WhatIfPanel() {
               {res?.is_anomaly ? "Anomaly" : "Normal"}
             </span>
           </div>
-          <div className="text-xs text-muted-foreground mt-3">
+          <div className="text-sm mt-3">
+            <span className="text-muted-foreground">Remaining useful life: </span>
+            <b className="text-foreground">{res?.predicted_rul ?? "—"} cycles</b>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2">
             ± is the spread across the forest's trees (model confidence)
           </div>
         </div>

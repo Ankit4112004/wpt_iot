@@ -29,8 +29,13 @@ RAW_CSV = os.path.join(HERE, "data", "raw", "nasa_discharge.csv")
 # Used by the temperature soft-sensor and the anomaly detector.
 INSTANT_FEATURES = ["Voltage_measured", "Current_measured", "Power", "Time"]
 
-# Per-cycle features: summary of one full discharge cycle. Used by the health model.
+# Per-cycle features: summary of one full discharge cycle.
+# Used by BOTH the health classifier and the RUL (remaining-useful-life) regressor.
 CYCLE_FEATURES = ["v_mean", "v_min", "i_mean", "duration", "temp_max", "temp_mean"]
+
+# End-of-life threshold (Ah). The NASA-standard failure criterion: a cell is "dead" once
+# its capacity fades to this value. RUL = how many cycles remain until it hits this.
+EOL_CAPACITY = 1.4
 
 
 def load_raw():
@@ -79,3 +84,26 @@ def build_cycle_table(df):
     cyc["degraded"] = (cyc["capacity"] < threshold).astype(int)
     cyc.attrs["health_threshold"] = float(threshold)
     return cyc
+
+
+def build_rul_table(df):
+    """
+    Per-cycle table labelled with Remaining Useful Life (RUL) = cycles left until the cell
+    reaches end-of-life (capacity <= EOL_CAPACITY).
+
+    For each battery we find the cycle where capacity first drops to EOL, then label every
+    earlier cycle with how many cycles remain. Batteries that never reach EOL are skipped
+    (their RUL is unknown / censored). Keeps 'Battery' so evaluation can split by cell.
+    """
+    cyc = build_cycle_table(df)
+    parts = []
+    for battery, g in cyc.groupby("Battery"):
+        g = g.sort_values("id_cycle").reset_index(drop=True)
+        below = g[g["capacity"] <= EOL_CAPACITY]
+        if below.empty:
+            continue
+        eol_cycle = below["id_cycle"].iloc[0]
+        g = g[g["id_cycle"] <= eol_cycle].copy()
+        g["RUL"] = eol_cycle - g["id_cycle"]
+        parts.append(g)
+    return pd.concat(parts, ignore_index=True)
