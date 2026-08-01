@@ -12,7 +12,7 @@ const MODELS = [
   },
   {
     name: "Battery-Health Classifier",
-    type: "Supervised classification · Random Forest",
+    type: "Supervised classification · Decision Tree",
     accent: "#f59e0b",
     metric: "89% accuracy · 0.88 F1",
     what: "Classifies the battery as Healthy or Degraded from the shape of a discharge cycle.",
@@ -21,7 +21,7 @@ const MODELS = [
   },
   {
     name: "Remaining Useful Life (RUL)",
-    type: "Supervised regression · Random Forest",
+    type: "Supervised regression · Decision Tree",
     accent: "#10b981",
     metric: "R² 0.86 · ± 9.9 cycles",
     what: "Predicts how many charge cycles remain before end-of-life (capacity → 1.4 Ah).",

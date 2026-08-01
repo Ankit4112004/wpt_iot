@@ -27,6 +27,7 @@ from sklearn.ensemble import (
     RandomForestClassifier,
     IsolationForest,
 )
+from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 
 import features as F  # run from inside ml/ , or `python ml/train.py` from repo root
 
@@ -56,8 +57,8 @@ def main():
     # ---------- Model 2: Battery-health classifier (classification) ----------
     print("\n[2/4] Training battery-health classifier (classification) ...")
     cyc = F.build_cycle_table(df)
-    health_model = RandomForestClassifier(
-        n_estimators=120, random_state=42, n_jobs=-1, class_weight="balanced"
+    health_model = DecisionTreeClassifier(
+        random_state=42, class_weight="balanced"
     )
     health_model.fit(cyc[F.CYCLE_FEATURES].values, cyc["degraded"].values)
     joblib.dump(health_model, os.path.join(MODELS_DIR, "health_classifier.pkl"))
@@ -67,8 +68,8 @@ def main():
     # ---------- Model 4: Remaining Useful Life (regression) ----------
     print("\n[4/4] Training remaining-useful-life regressor (regression) ...")
     rul = F.build_rul_table(df)
-    rul_model = RandomForestRegressor(
-        n_estimators=120, max_depth=12, min_samples_leaf=5, random_state=42, n_jobs=-1
+    rul_model = DecisionTreeRegressor(
+        max_depth=12, min_samples_leaf=5, random_state=42
     )
     rul_model.fit(rul[F.CYCLE_FEATURES].values, rul["RUL"].values)
     joblib.dump(rul_model, os.path.join(MODELS_DIR, "rul_regressor.pkl"))
