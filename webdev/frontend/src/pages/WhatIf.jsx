@@ -27,7 +27,8 @@ export default function WhatIf() {
           <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
             <li className="flex gap-3"><span className="text-muted-foreground mt-0.5">•</span><div><b className="text-foreground font-medium">Predicted temperature</b> comes from the soft-sensor — drag the discharge current up and watch it rise (more current → more heating).</div></li>
             <li className="flex gap-3"><span className="text-muted-foreground mt-0.5">•</span><div><b className="text-foreground font-medium">± confidence</b> is the spread of predictions across the Random Forest's individual trees: a tight band means the trees agree.</div></li>
-            <li className="flex gap-3"><span className="text-muted-foreground mt-0.5">•</span><div><b className="text-foreground font-medium">Health & RUL</b> come from the per-cycle models based on the characteristics of the simulated cycle.</div></li>
+            {/* --- COMMENTED OUT — Health & RUL bullet (downgraded) --- */}
+            {/* <li className="flex gap-3"><span className="text-muted-foreground mt-0.5">•</span><div><b className="text-foreground font-medium">Health & RUL</b> come from the per-cycle models based on the characteristics of the simulated cycle.</div></li> */}
           </ul>
         </div>
       </div>

@@ -40,7 +40,7 @@ export default function WhatIfPanel() {
 
   const t = res?.predicted_temp;
   const tempColor = t == null ? "#a3a3a3" : t >= 38 ? "#ef4444" : t >= 33 ? "#f59e0b" : "#10b981";
-  const healthy = res?.health_label !== "Degraded";
+  // const healthy = res?.health_label !== "Degraded";  // COMMENTED OUT — health model downgraded
 
   return (
     <div className="rounded-xl border bg-card text-card-foreground shadow-sm p-6">
@@ -73,17 +73,19 @@ export default function WhatIfPanel() {
             )}
           </div>
           <div className="flex flex-wrap gap-2 mt-3">
-            <span className={`rounded-full border px-3 py-1 text-xs font-medium ${healthy ? "text-emerald-500 border-emerald-500/20" : "text-amber-500 border-amber-500/20"}`}>
+            {/* --- COMMENTED OUT — Health chip (downgraded) --- */}
+            {/* <span className={`rounded-full border px-3 py-1 text-xs font-medium ${healthy ? "text-emerald-500 border-emerald-500/20" : "text-amber-500 border-amber-500/20"}`}>
               {res?.health_label ?? "—"}
-            </span>
+            </span> */}
             <span className={`rounded-full border px-3 py-1 text-xs font-medium ${res?.is_anomaly ? "text-amber-500 border-amber-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
               {res?.is_anomaly ? "Anomaly" : "Normal"}
             </span>
           </div>
-          <div className="text-sm mt-3">
+          {/* --- COMMENTED OUT — RUL display (downgraded) --- */}
+          {/* <div className="text-sm mt-3">
             <span className="text-muted-foreground">Remaining useful life: </span>
             <b className="text-foreground">{res?.predicted_rul ?? "—"} cycles</b>
-          </div>
+          </div> */}
           <div className="text-xs text-muted-foreground mt-2">
             ± is the spread across the forest's trees (model confidence)
           </div>
@@ -92,3 +94,4 @@ export default function WhatIfPanel() {
     </div>
   );
 }
+

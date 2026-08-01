@@ -36,27 +36,28 @@ def run_inference(voltage, current, time_in_cycle):
     anom = M.detect_anomaly(voltage, current, temp)
 
     # 3) battery-health from a rolling summary of recent readings
+    #    (COMMENTED OUT — health classifier and RUL regressor downgraded)
     _window.append({"v": voltage, "i": current, "t": temp, "time": time_in_cycle})
-    vs = [w["v"] for w in _window]
-    cs = [w["i"] for w in _window]
-    ts = [w["t"] for w in _window]
-    times = [w["time"] for w in _window]
-    # The same per-cycle summary feeds BOTH the health classifier and the RUL regressor.
-    v_mean, v_min = sum(vs) / len(vs), min(vs)
-    i_mean = sum(cs) / len(cs)
-    duration = max(times) - min(times) if len(times) > 1 else times[0]
-    temp_max, temp_mean = max(ts), sum(ts) / len(ts)
+    # vs = [w["v"] for w in _window]
+    # cs = [w["i"] for w in _window]
+    # ts = [w["t"] for w in _window]
+    # times = [w["time"] for w in _window]
+    # # The same per-cycle summary feeds BOTH the health classifier and the RUL regressor.
+    # v_mean, v_min = sum(vs) / len(vs), min(vs)
+    # i_mean = sum(cs) / len(cs)
+    # duration = max(times) - min(times) if len(times) > 1 else times[0]
+    # temp_max, temp_mean = max(ts), sum(ts) / len(ts)
 
-    health = M.predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
-    rul = M.predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
+    # health = M.predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
+    # rul = M.predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean)
 
     return {
         "predicted_temp": temp,
         "is_anomaly": anom["is_anomaly"],
         "anomaly_score": anom["score"],
-        "health_label": health["label"],
-        "degraded_probability": health["degraded_probability"],
-        "predicted_rul": rul,
+        "health_label": "N/A",
+        "degraded_probability": 0.0,
+        "predicted_rul": 0,
     }
 
 

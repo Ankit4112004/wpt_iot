@@ -25,14 +25,15 @@ def _load(name):
 # Load once at import. If models are missing, the backend can check MODELS_LOADED.
 try:
     _temp = _load("temperature_regressor.pkl")
-    _health = _load("health_classifier.pkl")
+    # _health = _load("health_classifier.pkl")       # COMMENTED OUT — downgraded
     _anom = _load("anomaly_detector.pkl")
-    _rul = _load("rul_regressor.pkl")
+    # _rul = _load("rul_regressor.pkl")              # COMMENTED OUT — downgraded
     with open(os.path.join(MODELS_DIR, "metadata.json")) as f:
         META = json.load(f)
     MODELS_LOADED = True
 except FileNotFoundError:
-    _temp = _health = _anom = _rul = None
+    _temp = _anom = None
+    # _health = _rul = None                          # COMMENTED OUT — downgraded
     META = {}
     MODELS_LOADED = False
 
@@ -53,20 +54,28 @@ def detect_anomaly(voltage, current, temperature):
     return {"is_anomaly": label == -1, "score": round(score, 4)}
 
 
-def predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
-    """Classify the battery for one discharge cycle as healthy / degraded."""
-    X = np.array([[v_mean, v_min, i_mean, duration, temp_max, temp_mean]])
-    degraded = int(_health.predict(X)[0])
-    proba = float(_health.predict_proba(X)[0][1])  # probability of 'degraded'
-    return {"degraded": bool(degraded),
-            "label": "Degraded" if degraded else "Healthy",
-            "degraded_probability": round(proba, 3)}
+# --- COMMENTED OUT — Battery-health classifier (downgraded) ---
+# def predict_health(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
+#     """Classify the battery for one discharge cycle as healthy / degraded."""
+#     X = np.array([[v_mean, v_min, i_mean, duration, temp_max, temp_mean]])
+#     degraded = int(_health.predict(X)[0])
+#     proba = float(_health.predict_proba(X)[0][1])  # probability of 'degraded'
+#     return {"degraded": bool(degraded),
+#             "label": "Degraded" if degraded else "Healthy",
+#             "degraded_probability": round(proba, 3)}
+def predict_health(*args, **kwargs):
+    """Stub — health classifier is commented out / downgraded."""
+    return {"degraded": False, "label": "N/A", "degraded_probability": 0.0}
 
 
-def predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
-    """Estimate Remaining Useful Life = charge cycles left before end-of-life."""
-    X = np.array([[v_mean, v_min, i_mean, duration, temp_max, temp_mean]])
-    return max(0, int(round(float(_rul.predict(X)[0]))))
+# --- COMMENTED OUT — RUL regressor (downgraded) ---
+# def predict_rul(v_mean, v_min, i_mean, duration, temp_max, temp_mean):
+#     """Estimate Remaining Useful Life = charge cycles left before end-of-life."""
+#     X = np.array([[v_mean, v_min, i_mean, duration, temp_max, temp_mean]])
+#     return max(0, int(round(float(_rul.predict(X)[0]))))
+def predict_rul(*args, **kwargs):
+    """Stub — RUL regressor is commented out / downgraded."""
+    return 0
 
 
 def predict_temperature_ci(voltage, current, time_in_cycle=0.0):
@@ -87,20 +96,20 @@ def predict_temperature_ci(voltage, current, time_in_cycle=0.0):
 def whatif(voltage, current, time_in_cycle=1800.0):
     """
     On-demand 'what-if' prediction for the interactive panel (not stored in the DB).
-    Given electrical inputs, return all 3 models' outputs + the temperature confidence.
+    Given electrical inputs, return the 2 active models' outputs + the temperature confidence.
     """
     temp, conf = predict_temperature_ci(voltage, current, time_in_cycle)
     anom = detect_anomaly(voltage, current, temp)
-    # Single point has no real cycle, so summarise it as a one-sample cycle for the
-    # health model (good enough for an interactive demo).
-    health = predict_health(voltage, voltage, current, time_in_cycle, temp, temp)
-    rul = predict_rul(voltage, voltage, current, time_in_cycle, temp, temp)
+    # Health and RUL are commented out — return stub defaults
+    # health = predict_health(voltage, voltage, current, time_in_cycle, temp, temp)
+    # rul = predict_rul(voltage, voltage, current, time_in_cycle, temp, temp)
     return {
         "predicted_temp": temp,
         "temp_confidence": conf,
         "is_anomaly": anom["is_anomaly"],
         "anomaly_score": anom["score"],
-        "health_label": health["label"],
-        "degraded_probability": health["degraded_probability"],
-        "predicted_rul": rul,
+        "health_label": "N/A",
+        "degraded_probability": 0.0,
+        "predicted_rul": 0,
     }
+

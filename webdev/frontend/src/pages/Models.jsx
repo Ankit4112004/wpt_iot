@@ -1,4 +1,4 @@
-// Static descriptions of the 4 ML models. Metrics match ml/reports/metrics.json
+// Static descriptions of the 2 active ML models. Metrics match ml/reports/metrics.json
 // (held-out / cross-validated — honest numbers).
 const MODELS = [
   {
@@ -10,24 +10,26 @@ const MODELS = [
     why: "The real charging circuit has no temperature sensor. Instead of faking it, the model infers temperature from the data we do have — a 'virtual sensor'.",
     use: "Drives the temperature gauge and the over-temp safety alert on the dashboard.",
   },
-  {
-    name: "Battery-Health Classifier",
-    type: "Supervised classification · Decision Tree",
-    accent: "#f59e0b",
-    metric: "89% accuracy · 0.88 F1",
-    what: "Classifies the battery as Healthy or Degraded from the shape of a discharge cycle.",
-    why: "Capacity fades as a cell ages; the discharge curve reveals it. Validated with GroupKFold by cell, so it's scored on batteries it never trained on.",
-    use: "Shows the health status chip and feeds the alerts/analytics views.",
-  },
-  {
-    name: "Remaining Useful Life (RUL)",
-    type: "Supervised regression · Decision Tree",
-    accent: "#10b981",
-    metric: "R² 0.86 · ± 9.9 cycles",
-    what: "Predicts how many charge cycles remain before end-of-life (capacity → 1.4 Ah).",
-    why: "A classic battery-prognostics task. Reuses the same per-cycle features as the health model, so it needs no extra sensors.",
-    use: "Shown as the RUL chip on the dashboard and in the What-if predictor.",
-  },
+  // --- COMMENTED OUT — Battery-Health Classifier (downgraded) ---
+  // {
+  //   name: "Battery-Health Classifier",
+  //   type: "Supervised classification · Decision Tree",
+  //   accent: "#f59e0b",
+  //   metric: "89% accuracy · 0.88 F1",
+  //   what: "Classifies the battery as Healthy or Degraded from the shape of a discharge cycle.",
+  //   why: "Capacity fades as a cell ages; the discharge curve reveals it. Validated with GroupKFold by cell, so it's scored on batteries it never trained on.",
+  //   use: "Shows the health status chip and feeds the alerts/analytics views.",
+  // },
+  // --- COMMENTED OUT — Remaining Useful Life / RUL (downgraded) ---
+  // {
+  //   name: "Remaining Useful Life (RUL)",
+  //   type: "Supervised regression · Decision Tree",
+  //   accent: "#10b981",
+  //   metric: "R² 0.86 · ± 9.9 cycles",
+  //   what: "Predicts how many charge cycles remain before end-of-life (capacity → 1.4 Ah).",
+  //   why: "A classic battery-prognostics task. Reuses the same per-cycle features as the health model, so it needs no extra sensors.",
+  //   use: "Shown as the RUL chip on the dashboard and in the What-if predictor.",
+  // },
   {
     name: "Anomaly Detector",
     type: "Unsupervised · Isolation Forest",
@@ -82,7 +84,7 @@ export default function Models() {
       <header>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">ML Models</h1>
         <p className="text-sm text-muted-foreground">
-          Four models across the three main ML types, trained on the real NASA Li-ion battery dataset.
+          Two models — regression and unsupervised — trained on the real NASA Li-ion battery dataset.
         </p>
       </header>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -91,3 +93,4 @@ export default function Models() {
     </div>
   );
 }
+
