@@ -1,8 +1,8 @@
 const STACK = [
-  ["Frontend", "React + Vite + Tailwind", "Dashboard, charts (Recharts), what-if panel"],
+  ["Frontend", "React + Vite + Tailwind", "Dashboard, charts (Recharts)"],
   ["Backend", "FastAPI (Python)", "REST API + ingestion worker + auto /docs"],
   ["Database", "PostgreSQL (Neon)", "Source of truth: readings, predictions, alerts"],
-  ["ML", "scikit-learn", "4 models trained on real NASA battery data"],
+  ["ML", "scikit-learn", "2 models trained on real NASA battery data"],
   ["Data source", "ThingSpeak / MATLAB", "Live telemetry (optional) + recorded replay"],
   ["Hosting", "Vercel · Render · Neon", "Frontend · backend · database"],
 ];
@@ -25,7 +25,7 @@ export default function Architecture() {
                               ▼
               Ingestion Worker (every 3s)
               Fallback: LIVE → REPLAY → last-known
-                              │  Evaluates 4 ML models
+                              │  Evaluates 2 ML models
                               ▼
          PostgreSQL  ◄── readings, predictions, alerts
               ▲

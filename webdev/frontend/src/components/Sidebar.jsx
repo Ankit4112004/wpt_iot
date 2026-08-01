@@ -21,7 +21,6 @@ function Icon({ d }) {
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: I.home, end: true },
-  { to: "/whatif", label: "What-if", icon: I.sliders },
   { to: "/models", label: "Models", icon: I.cpu },
 ];
 
