@@ -1,8 +1,8 @@
 """Database connection and SQLAlchemy models for the telemetry monitor.
 
 The same code works on SQLite for local development and Postgres in production.
-Existing legacy columns from retired models are left in place by the database;
-the current ORM and API simply no longer read or write them.
+Legacy health/RUL columns remain internal compatibility fields for existing production
+schemas, while the current inference layer and API expose only active outputs.
 """
 
 from datetime import datetime, timezone
@@ -54,6 +54,11 @@ class Prediction(Base):
     predicted_temp: Mapped[float] = mapped_column(Float)
     is_anomaly: Mapped[bool] = mapped_column(Boolean, default=False)
     anomaly_score: Mapped[float] = mapped_column(Float, default=0.0)
+    # Retained only so existing production databases with NOT NULL legacy columns
+    # can continue accepting rows. These fields are not exposed by the API.
+    health_label: Mapped[str] = mapped_column(String(16), default="N/A", nullable=False)
+    degraded_probability: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    predicted_rul: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     reading: Mapped["Reading"] = relationship(back_populates="prediction")
 
