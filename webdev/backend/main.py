@@ -65,10 +65,10 @@ def health():
 @app.get("/api/readings/latest")
 def latest_reading():
     """Newest reading plus its prediction and freshness information."""
-    # In replay mode, make a normal dashboard poll advance the demo stream even if
-    # the hosting platform pauses the in-process scheduler thread.
-    if not (config.THINGSPEAK_CHANNEL and config.THINGSPEAK_READ_KEY):
-        ensure_fresh()
+    # Make a normal dashboard poll kick the ingestion worker if the hosting
+    # platform pauses the in-process scheduler thread. The worker itself still
+    # decides between fresh ThingSpeak data, replay, and last-known behavior.
+    ensure_fresh()
     with SessionLocal() as s:
         r = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
         if not r:
