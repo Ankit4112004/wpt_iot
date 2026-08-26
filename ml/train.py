@@ -2,6 +2,7 @@ import json
 import os
 
 import joblib
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import IsolationForest, RandomForestRegressor
 
 import features as F
@@ -16,6 +17,7 @@ def main():
 
     print("\n[1/2] Training temperature soft-sensor (regression) ...")
     X_inst, y_temp = F.build_instant_table(df)
+    X_train, X_test, y_train, y_test = train_test_split(X_inst, y_temp, test_size=0.2, random_state=42)
     temp_model = RandomForestRegressor(
         n_estimators=40,
         max_depth=10,
@@ -23,7 +25,7 @@ def main():
         random_state=42,
         n_jobs=-1,
     )
-    temp_model.fit(X_inst.values, y_temp.values)
+    temp_model.fit(X_train.values, y_train.values)
     joblib.dump(temp_model, os.path.join(MODELS_DIR, "temperature_regressor.pkl"))
     print(f"  features: {F.INSTANT_FEATURES} -> Temperature (C)")
 
@@ -34,13 +36,14 @@ def main():
         "Power",
         "Temperature_measured",
     ]
+    df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
     anom_model = IsolationForest(
         n_estimators=120,
         contamination=0.02,
         random_state=42,
         n_jobs=-1,
     )
-    anom_model.fit(df[anom_features].values)
+    anom_model.fit(df_train[anom_features].values)
     joblib.dump(anom_model, os.path.join(MODELS_DIR, "anomaly_detector.pkl"))
     print(f"  features: {anom_features} -> anomaly score")
 

@@ -3,7 +3,7 @@ import sys
 
 ML_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "ml"))
 sys.path.insert(0, ML_DIR)
-import predict as M
+import predict as M  # type: ignore # noqa: E402
 
 def run_inference(voltage, current, time_in_cycle):
     
