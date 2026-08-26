@@ -1,13 +1,3 @@
-"""
-main.py — the FastAPI application: endpoints + startup wiring.
-
-Run locally:  uvicorn main:app --reload   (from webdev/backend/)
-Interactive API docs are auto-generated at  http://localhost:8000/docs
-
-The frontend talks ONLY to these endpoints — never to ThingSpeak directly. That's what
-makes the dashboard resilient: it always reads from our database.
-"""
-
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -24,16 +14,13 @@ from inference import models_ready
 
 scheduler = BackgroundScheduler(daemon=True)
 
-
 def _seconds_ago(ts: datetime) -> int:
     if ts.tzinfo is None:
         ts = ts.replace(tzinfo=timezone.utc)
     return int((datetime.now(timezone.utc) - ts).total_seconds())
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # --- startup ---
     init_db()
     with SessionLocal() as s:
         if not s.scalar(select(Channel).limit(1)):
@@ -41,33 +28,26 @@ async def lifespan(app: FastAPI):
                           thingspeak_channel=config.THINGSPEAK_CHANNEL,
                           read_key=config.THINGSPEAK_READ_KEY))
             s.commit()
-    tick()  # produce one reading immediately so the DB is never empty on first request
+    tick()
     scheduler.add_job(tick, "interval", seconds=config.TICK_SECONDS, id="ingest",
                       max_instances=1, coalesce=True)
     scheduler.start()
     yield
-    # --- shutdown ---
     scheduler.shutdown(wait=False)
-
 
 app = FastAPI(title="EV WPT Monitor API", version="2.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"]
 )
 
-
 @app.get("/health")
 def health():
     return {"status": "ok", "models_loaded": models_ready(),
             "tick_seconds": config.TICK_SECONDS}
 
-
 @app.get("/api/readings/latest")
 def latest_reading():
-    """Newest reading plus its prediction and freshness information."""
-    # Make a normal dashboard poll kick the ingestion worker if the hosting
-    # platform pauses the in-process scheduler thread. The worker itself still
-    # decides between fresh ThingSpeak data, replay, and last-known behavior.
+    
     ensure_fresh()
     with SessionLocal() as s:
         r = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
@@ -85,10 +65,9 @@ def latest_reading():
             "is_anomaly": p.is_anomaly if p else None,
         }
 
-
 @app.get("/api/readings")
 def readings(limit: int = 100):
-    """Recent readings (oldest -> newest) with predicted temperature, for the charts."""
+    
     limit = max(1, min(limit, 500))
     with SessionLocal() as s:
         rows = s.scalars(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(limit)).all()
@@ -100,7 +79,6 @@ def readings(limit: int = 100):
             "predicted_temp": r.prediction.predicted_temp if r.prediction else None,
         } for r in rows]
 
-
 @app.get("/api/alerts")
 def alerts(limit: int = 20):
     with SessionLocal() as s:
@@ -111,10 +89,9 @@ def alerts(limit: int = 20):
             "message": a.message, "value": round(a.value, 3),
         } for a in rows]
 
-
 @app.get("/api/analytics/summary")
 def summary():
-    """Headline KPIs for the dashboard top bar."""
+    
     with SessionLocal() as s:
         latest = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
         recent = s.scalars(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(100)).all()

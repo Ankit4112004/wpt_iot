@@ -4,9 +4,6 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Models from "./pages/Models.jsx";
 import Architecture from "./pages/Architecture.jsx";
 
-// App shell: a collapsible sidebar + a routed main content area.
-// HashRouter is used so client-side routes work on static hosting (Vercel) with no
-// extra rewrite config — refreshing /models never 404s.
 export default function App() {
   return (
     <HashRouter>
@@ -23,4 +20,3 @@ export default function App() {
     </HashRouter>
   );
 }
-

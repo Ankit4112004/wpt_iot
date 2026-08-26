@@ -1,9 +1,3 @@
-"""Train the two production ML models and save them to ``ml/models/``.
-
-Run from this directory with ``python train.py`` after ``get_data.py`` has
-downloaded the NASA battery dataset.
-"""
-
 import json
 import os
 
@@ -14,7 +8,6 @@ import features as F
 
 MODELS_DIR = os.path.join(os.path.dirname(__file__), "models")
 os.makedirs(MODELS_DIR, exist_ok=True)
-
 
 def main():
     print("Loading data ...")
@@ -60,7 +53,6 @@ def main():
         json.dump(meta, f, indent=2)
 
     print("\nSaved 2 models + metadata.json to ml/models/")
-
 
 if __name__ == "__main__":
     main()

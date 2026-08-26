@@ -1,4 +1,3 @@
-// A reusable time-series area chart (used for temperature, power, SOC, voltage).
 import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
 } from "recharts";

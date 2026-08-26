@@ -1,5 +1,3 @@
-// Static descriptions of the 2 active ML models. Metrics match ml/reports/metrics.json
-// (held-out / cross-validated — honest numbers).
 const MODELS = [
   {
     name: "Temperature Soft-Sensor",
@@ -73,4 +71,3 @@ export default function Models() {
     </div>
   );
 }
-

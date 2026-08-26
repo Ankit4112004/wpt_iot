@@ -1,4 +1,3 @@
-// A single live metric tile (Voltage / Current / Power / SOC).
 export default function MetricCard({ label, value, unit, accent }) {
   return (
     <div className="rounded-xl border bg-card text-card-foreground shadow-sm flex flex-col p-6 border-t-[3px]" style={{ borderTopColor: accent }}>

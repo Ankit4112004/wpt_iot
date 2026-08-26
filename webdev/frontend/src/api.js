@@ -1,6 +1,3 @@
-// api.js — the only place the frontend talks to the backend.
-// In dev, BASE is "" and Vite proxies /api to localhost:8000.
-// In prod, set VITE_API_BASE to the deployed backend URL (e.g. the Render URL).
 const BASE = import.meta.env.VITE_API_BASE || "";
 const REQUEST_TIMEOUT_MS = 8000;
 
@@ -19,7 +16,6 @@ async function getJSON(path) {
     clearTimeout(timeout);
   }
 }
-
 
 export const api = {
   latest: () => getJSON("/api/readings/latest"),

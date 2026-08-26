@@ -35,7 +35,6 @@ export default function Dashboard() {
   const [autoFetch, setAutoFetch] = useState(true);
   const [isFetching, setIsFetching] = useState(false);
 
-  // For smooth ticking of "seconds ago"
   const [baseAgo, setBaseAgo] = useState(0);
   const [localFetchTime, setLocalFetchTime] = useState(Date.now());
   const [now, setNow] = useState(Date.now());
@@ -88,7 +87,6 @@ export default function Dashboard() {
 
   const totalSecondsAgo = latest != null ? Math.max(0, baseAgo + Math.floor((now - localFetchTime) / 1000)) : null;
 
-  // 3-tier data resolution badge logic
   let badgeColor = "text-emerald-500 border-emerald-500/20";
   let dotColor = "bg-emerald-500";
   let badgeText = "Live (ThingSpeak)";

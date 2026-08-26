@@ -1,4 +1,3 @@
-// Lists recent safety/anomaly events written by the backend (over-temp, anomaly).
 function ago(s) {
   if (s < 60) return `${s}s ago`;
   if (s < 3600) return `${Math.floor(s / 60)}m ago`;

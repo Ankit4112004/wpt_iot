@@ -1,5 +1,3 @@
-// The headline ML output: battery temperature ESTIMATED by the soft-sensor (no sensor!).
-// Colour shifts green -> amber -> red as it approaches the over-temp limit.
 export default function TempGauge({ temp, limit = 38 }) {
   const t = temp ?? 0;
   const pct = Math.max(0, Math.min(100, (t / (limit + 8)) * 100));

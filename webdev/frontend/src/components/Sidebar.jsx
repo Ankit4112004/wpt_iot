@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
 
-// Minimal inline icons (stroke inherits text colour).
 const I = {
   panel: "M9 3v18M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
   home: "M3 11l9-8 9 8M5 10v10a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V10",
@@ -31,7 +30,7 @@ export default function Sidebar() {
     <aside
       className={`sticky top-0 h-screen z-50 shrink-0 border-r bg-card flex flex-col transition-all duration-300 ${open ? "w-60" : "w-16"}`}
     >
-      {/* logo + toggle */}
+      
       <div className="flex items-center gap-3 h-16 px-3 border-b">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-secondary/50 text-foreground font-bold text-sm shrink-0 shadow-sm">
           EV
@@ -53,7 +52,7 @@ export default function Sidebar() {
         {open && <span className="text-xs">Collapse</span>}
       </button>
 
-      {/* nav */}
+      
       <nav className="flex-1 py-2">
         {NAV.map((n) => (
           <NavLink
@@ -75,7 +74,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* footer link to Architecture */}
+      
       <NavLink
         to="/architecture"
         title="Architecture"
