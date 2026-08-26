@@ -70,7 +70,6 @@ export default function Dashboard() {
     return () => clearInterval(id);
   }, [autoFetch, fetchData]);
 
-  // const healthy = latest?.health_label !== "Degraded";  // COMMENTED OUT — health model downgraded
   const totalSecondsAgo = latest != null ? Math.max(0, baseAgo + Math.floor((now - localFetchTime) / 1000)) : null;
 
   // 3-tier data resolution badge logic
@@ -130,10 +129,6 @@ export default function Dashboard() {
 
       <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
         <motion.section className="flex flex-wrap gap-3" variants={item}>
-          {/* --- COMMENTED OUT — Battery health chip (downgraded) --- */}
-          {/* <div className={`rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card ${healthy ? "text-emerald-500 border-emerald-500/20" : "text-amber-500 border-amber-500/20"}`}>
-            Battery health: <b className="text-foreground">{latest?.health_label ?? "—"}</b>
-          </div> */}
           <div className={`rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card ${latest?.is_anomaly ? "text-amber-500 border-amber-500/20" : "text-emerald-500 border-emerald-500/20"}`}>
             {latest?.is_anomaly ? "Anomaly detected" : "No anomaly"}
           </div>
@@ -143,10 +138,6 @@ export default function Dashboard() {
           <div className="rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card text-muted-foreground">
             Avg power: <b className="text-foreground">{summary?.avg_power_recent ?? "—"} W</b>
           </div>
-          {/* --- COMMENTED OUT — RUL chip (downgraded) --- */}
-          {/* <div className="rounded-full border px-4 py-1.5 text-xs font-medium shadow-sm bg-card text-muted-foreground">
-            RUL: <b className="text-foreground">{latest?.predicted_rul ?? "—"} cycles</b>
-          </div> */}
         </motion.section>
 
         <motion.section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4" variants={item}>

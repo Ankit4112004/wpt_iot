@@ -1,38 +1,30 @@
-# ML — Battery Intelligence Models
+# Production machine-learning models
 
-Three machine-learning models for the EV WPT monitor, trained on the **real NASA Li-ion
-Battery Aging dataset** (measured discharge cycles for cells B0005/B0006/B0007/B0018).
+This directory contains the two machine-learning models used by the EV WPT monitor. Both models are trained from the NASA Li-ion Battery Aging dataset and consume instantaneous electrical measurements.
 
-One model of each main ML type, so the project demonstrates breadth without complexity:
+| Model | Type | Predicts | Runtime use |
+|---|---|---|---|
+| Temperature soft-sensor | Supervised regression | Battery temperature from voltage, current, power, and time | Feeds the temperature gauge and over-temperature alerts |
+| Anomaly detector | Unsupervised Isolation Forest | Whether an operating point is abnormal | Feeds anomaly status and alerts |
 
-| Model | Type | Predicts | Held-out score |
-|-------|------|----------|----------------|
-| Temperature soft-sensor | Supervised **regression** | Battery temperature (°C) from voltage/current/power | **R² 0.98, MAE 0.41 °C** |
-| Battery-health classifier | Supervised **classification** | Healthy vs Degraded (per discharge cycle) | **89% acc, 0.88 F1** |
-| Anomaly detector | **Unsupervised** | Abnormal operating points | flags ~2% outliers |
+The temperature model is a virtual sensor for installations where the charging circuit does not expose a temperature measurement. The anomaly model receives the predicted temperature together with voltage, current, and power, allowing the full live inference chain to operate from electrical signals.
 
-Scores are honest: the regressor is tested on a held-out split, and the classifier uses
-**GroupKFold by battery cell** — it's scored on cells it never trained on, so the number
-reflects real generalisation, not memorisation.
-
-## Run
+## Run locally
 
 ```bash
 pip install -r requirements.txt
-python get_data.py     # downloads the raw dataset (~21 MB)
-python train.py        # trains 3 models -> models/*.pkl
-python evaluate.py     # writes reports/metrics.json + plots
+python get_data.py     # downloads the raw dataset
+python train.py        # trains the two models
 ```
 
-## Files
-- `get_data.py` — downloads the raw NASA dataset.
-- `features.py` — data loading + feature engineering (one source of truth).
-- `train.py` — trains and saves the 3 models.
-- `evaluate.py` — honest metrics + confusion-matrix / feature-importance plots.
-- `predict.py` — loads the models and exposes simple `predict_*` functions for the backend.
+The raw dataset is downloaded into `ml/data/raw/` and is ignored by Git. Trained model files are written to `ml/models/`.
 
-## The USP (why this design)
-The real charging circuit has **no temperature sensor** — it only measures voltage, current,
-power and SOC. So instead of faking temperature, the **soft-sensor infers it from the
-electrical signals**. That turns a hardware limitation into the project's headline feature,
-and feeds the safety alerts (over-temp) and the health/anomaly views on the dashboard.
+## Files
+
+| File | Purpose |
+|---|---|
+| `get_data.py` | Downloads the NASA battery dataset required for training |
+| `features.py` | Loads raw measurements and builds instantaneous model features |
+| `train.py` | Trains and saves the temperature and anomaly models |
+| `predict.py` | Loads the models and exposes runtime prediction functions |
+| `models/metadata.json` | Records the active model feature sets and dataset name |

@@ -1,56 +1,61 @@
-# Backend — FastAPI + Postgres
+# EV WPT Monitor backend
 
-The system's source of truth. It ingests battery telemetry, runs the 3 ML models on every
-reading, stores everything, and serves the dashboard. The frontend talks **only** to this
-API — never to ThingSpeak directly — which is what makes the dashboard resilient.
+The FastAPI backend is the source of truth for telemetry. It ingests optional ThingSpeak data, runs the two active ML models on each reading, stores telemetry and predictions, and serves the React dashboard. The frontend never connects to ThingSpeak directly.
 
-## Run locally (zero setup — uses SQLite + replay)
+## Run locally
 
 ```bash
 pip install -r requirements.txt
 uvicorn main:app --reload          # http://localhost:8000
 ```
-Interactive API docs: **http://localhost:8000/docs**
 
-No database to install and no ThingSpeak needed: it defaults to a local SQLite file and
-streams a recorded battery cycle on a loop.
+The default configuration uses a local SQLite database and the recorded replay stream in `data/demo_cycles.csv`, so local development does not require PostgreSQL or ThingSpeak.
 
-## Architecture
+## Data flow
 
+```text
+ThingSpeak (optional)
+        |
+        v
+scheduled ingestion worker (every 3 seconds)
+        |
+        +--> live reading, when new data is available
+        +--> replay reading, when live data is unavailable
+        +--> last-known value, when a configured live source is stale
+        |
+        v
+SQLite / PostgreSQL
+        |
+        +--> temperature soft-sensor
+        +--> anomaly detector
+        |
+        v
+FastAPI REST API --> React dashboard
 ```
-ThingSpeak (optional) ─┐
-                       ▼
-            ingestion worker (every 3s, APScheduler)
-                       │  auto-picks source:  LIVE → REPLAY → last-known
-                       ▼
-   Postgres  ◄── reading + ML prediction + alerts written each tick
-       ▲
-       │  REST
-   FastAPI  ──►  React dashboard
-```
 
-## The 3-tier resolver (the resilience trick)
-Each tick the worker tries ThingSpeak; if there's no fresh live data it automatically
-streams the next recorded reading instead. The decision is automatic and invisible — the
-UI only shows **"last updated X ago"**. So the demo always animates, even with no live
-source, and an upstream outage just degrades to last-known-value.
+The ingestion worker also creates over-temperature and anomaly alerts and prunes old readings according to the runtime configuration.
 
 ## Endpoints
-- `GET /health` — status + whether models loaded
-- `GET /api/readings/latest` — newest reading + prediction + staleness
-- `GET /api/readings?limit=` — recent series for the charts
-- `GET /api/alerts?limit=` — over-temp / anomaly events
-- `GET /api/analytics/summary` — headline KPIs
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /health` | Reports service and model readiness |
+| `GET /api/readings/latest` | Returns the newest reading, active prediction, source, and staleness |
+| `GET /api/readings?limit=` | Returns recent telemetry and predicted temperature for charts |
+| `GET /api/alerts?limit=` | Returns recent over-temperature and anomaly alerts |
+| `GET /api/analytics/summary` | Returns dashboard headline metrics |
 
 ## Files
-- `config.py` — settings from env (SQLite/replay defaults).
-- `db.py` — SQLAlchemy connection + 4 tables (channels, readings, predictions, alerts).
-- `inference.py` — runs the 3 ML models on a reading (imports `ml/predict.py`).
-- `replay.py` — streams the recorded demo cycles in a loop.
-- `ingest.py` — the scheduled worker + 3-tier source resolver + alert logic + pruning.
-- `main.py` — FastAPI app, endpoints, startup wiring.
+
+| File | Purpose |
+|---|---|
+| `config.py` | Environment settings and replay/database defaults |
+| `db.py` | SQLAlchemy connection and telemetry/prediction/alert tables |
+| `inference.py` | Adapter for the temperature and anomaly models |
+| `replay.py` | Loops through the recorded demo dataset |
+| `ingest.py` | Scheduled source resolution, persistence, inference, alerts, and pruning |
+| `main.py` | FastAPI application, lifecycle, and REST endpoints |
 
 ## Production
-Set `DATABASE_URL` to a Neon Postgres connection string; everything else is unchanged.
-The worker is a simple in-process scheduled task (not a message queue) — correct for a
-single low-rate source.
+
+Set `DATABASE_URL` to a Neon PostgreSQL connection string. Set `THINGSPEAK_CHANNEL` and `THINGSPEAK_READ_KEY` only when a live ThingSpeak source is available. If the ThingSpeak variables are blank, the backend intentionally runs in replay mode.

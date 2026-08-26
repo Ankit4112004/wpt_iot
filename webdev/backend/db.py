@@ -1,28 +1,18 @@
-"""
-db.py — the database layer: connection + the 4 tables (SQLAlchemy ORM).
+"""Database connection and SQLAlchemy models for the telemetry monitor.
 
-The same code works on SQLite (local dev) and Postgres (production) — only the
-connection string in config.DATABASE_URL changes.
-
-The 4 tables and why each exists:
-  - Channel    : the data source config (ThingSpeak creds) — keeps keys out of the browser.
-  - Reading    : every telemetry sample (V, I, power, SOC) — the source of truth.
-  - Prediction : the ML output for each reading (predicted temp, anomaly, health).
-  - Alert      : safety/anomaly events shown on the dashboard's alerts panel.
+The same code works on SQLite for local development and Postgres in production.
+Existing legacy columns from retired models are left in place by the database;
+the current ORM and API simply no longer read or write them.
 """
 
 from datetime import datetime, timezone
 
-from sqlalchemy import (
-    create_engine, ForeignKey, String, Integer, Float, Boolean, DateTime, func
-)
-from sqlalchemy.orm import (
-    DeclarativeBase, Mapped, mapped_column, sessionmaker, relationship
-)
+from sqlalchemy import create_engine, ForeignKey, String, Integer, Float, Boolean, DateTime
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker, relationship
 
 import config
 
-# SQLite needs this flag because the scheduler thread and web thread share the connection.
+# SQLite needs this flag because the scheduler and web threads share the connection.
 connect_args = {"check_same_thread": False} if config.DATABASE_URL.startswith("sqlite") else {}
 engine = create_engine(config.DATABASE_URL, connect_args=connect_args, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
@@ -64,9 +54,6 @@ class Prediction(Base):
     predicted_temp: Mapped[float] = mapped_column(Float)
     is_anomaly: Mapped[bool] = mapped_column(Boolean, default=False)
     anomaly_score: Mapped[float] = mapped_column(Float, default=0.0)
-    health_label: Mapped[str] = mapped_column(String(16), default="Healthy")
-    degraded_probability: Mapped[float] = mapped_column(Float, default=0.0)
-    predicted_rul: Mapped[float] = mapped_column(Float, default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     reading: Mapped["Reading"] = relationship(back_populates="prediction")
 
@@ -75,29 +62,12 @@ class Alert(Base):
     __tablename__ = "alerts"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
-    type: Mapped[str] = mapped_column(String(24))      # 'over_temp' | 'anomaly'
+    type: Mapped[str] = mapped_column(String(24))  # 'over_temp' | 'anomaly'
     severity: Mapped[str] = mapped_column(String(16))  # 'warning' | 'critical'
     message: Mapped[str] = mapped_column(String(160))
     value: Mapped[float] = mapped_column(Float, default=0.0)
 
 
 def init_db():
-    """Create all tables if they don't exist, then apply small additive migrations."""
+    """Create tables if they do not exist."""
     Base.metadata.create_all(engine)
-    _ensure_columns()
-
-
-def _ensure_columns():
-    """
-    Lightweight migration: create_all() won't ADD columns to a table that already exists
-    (e.g. the live Postgres DB from an earlier deploy). So we check for any new columns and
-    ALTER them in. Works on both SQLite and Postgres. Avoids needing a migration tool here.
-    """
-    from sqlalchemy import inspect, text
-    insp = inspect(engine)
-    existing = {c["name"] for c in insp.get_columns("predictions")}
-    additions = {"predicted_rul": "FLOAT DEFAULT 0"}
-    with engine.begin() as conn:
-        for col, ddl in additions.items():
-            if col not in existing:
-                conn.execute(text(f"ALTER TABLE predictions ADD COLUMN {col} {ddl}"))

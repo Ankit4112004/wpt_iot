@@ -20,7 +20,7 @@ from sqlalchemy.orm import joinedload
 import config
 from db import SessionLocal, init_db, Channel, Reading, Prediction, Alert
 from ingest import tick
-from inference import models_ready, what_if
+from inference import models_ready
 
 scheduler = BackgroundScheduler(daemon=True)
 
@@ -79,9 +79,6 @@ def latest_reading():
             "power": round(r.power, 2), "soc": round(r.soc, 2),
             "predicted_temp": p.predicted_temp if p else None,
             "is_anomaly": p.is_anomaly if p else None,
-            "health_label": p.health_label if p else None,
-            "degraded_probability": p.degraded_probability if p else None,
-            "predicted_rul": p.predicted_rul if p else None,
         }
 
 
@@ -98,17 +95,6 @@ def readings(limit: int = 100):
             "power": round(r.power, 2), "soc": round(r.soc, 2),
             "predicted_temp": r.prediction.predicted_temp if r.prediction else None,
         } for r in rows]
-
-
-@app.get("/api/whatif")
-def whatif(voltage: float, current: float, time_in_cycle: float = 1800.0):
-    """Interactive 'what-if': given electrical inputs, return the live ML outputs.
-
-    Not stored in the DB — it's an on-demand prediction for the dashboard's slider panel.
-    Inputs are per-cell values (the model's native range): voltage ~2.5-4.2 V,
-    current negative for discharge.
-    """
-    return what_if(voltage, current, time_in_cycle)
 
 
 @app.get("/api/alerts")
@@ -134,7 +120,6 @@ def summary():
         return {
             "current_soc": round(latest.soc, 1) if latest else None,
             "predicted_temp": latest.prediction.predicted_temp if latest and latest.prediction else None,
-            "health_label": latest.prediction.health_label if latest and latest.prediction else None,
             "peak_temp_recent": round(max(temps), 2) if temps else None,
             "avg_power_recent": round(sum(powers) / len(powers), 2) if powers else None,
             "readings_window": len(recent),

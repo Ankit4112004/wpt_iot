@@ -8,7 +8,7 @@ Each tick it:
        (last-known is implicit: if a tick produced nothing, the latest DB row simply stays)
      The decision is automatic and invisible — the UI only ever shows "last updated X ago".
   2. Stores the reading in Postgres.
-  3. Runs the 3 ML models on it and stores the prediction.
+  3. Runs the two active ML models on it and stores the prediction.
   4. Raises alerts (over-temp / anomaly) when warranted.
   5. Prunes old rows so the DB stays small.
 

@@ -1,79 +1,96 @@
 # EV Wireless Power Transfer (WPT) Monitor
 
-A full-stack, real-time telemetry dashboard for Wireless Power Transfer (WPT) EV charging. It ingests live electrical data (Voltage, Current, Power, SOC) from ThingSpeak, processes it through 3 custom Machine Learning models (Soft-Sensor Temperature, Anomaly Detection, Battery Health), and displays it on a premium React/Tailwind dashboard.
+A full-stack, real-time telemetry dashboard for wireless power transfer EV charging. The system ingests voltage, current, power, and state-of-charge data from ThingSpeak when configured, runs two production machine-learning models, stores readings in PostgreSQL or SQLite, and presents the results in a React dashboard.
 
-![Dashboard Screenshot](/path/to/screenshot.png) <!-- Add a screenshot here later! -->
-
----
-
-## 🏗️ Architecture
+## Active architecture
 
 ```mermaid
 flowchart LR
-    A[MATLAB / Simulink] -->|Live Feed| B(ThingSpeak)
-    B -->|Ingest Worker| C{Backend API<br/>FastAPI}
-    C -->|Store| D[(PostgreSQL)]
-    C <-->|ML Inference| E[Scikit-Learn<br/>Models]
-    C -->|REST / JSON| F[Frontend<br/>React + Tailwind]
+    A[MATLAB / Simulink] -->|Optional live feed| B(ThingSpeak)
+    B -->|Ingest worker| C{FastAPI backend}
+    C -->|Store| D[(PostgreSQL / SQLite)]
+    C <-->|ML inference| E[Temperature + Anomaly models]
+    C -->|REST / JSON| F[React frontend]
+    C -->|Fallback| G[demo_cycles.csv replay]
 ```
 
----
+The backend uses a three-tier source resolver. It first accepts genuinely new ThingSpeak data, falls back to the recorded `webdev/backend/data/demo_cycles.csv` stream when no live source is configured or available, and preserves the last stored reading when a configured live source has temporarily stopped producing new data. The dashboard indicates freshness and source status without connecting to ThingSpeak directly.
 
-## 🧠 The 3-Tier Data Resolver (Fail-Safe Ingestion)
+## Machine-learning models
 
-The backend ingestion worker runs on an APScheduler every 3 seconds and utilizes an intelligent **3-Tier Data Resolution** strategy to ensure the dashboard *never* crashes, even if the internet drops or MATLAB is stopped.
+| Model | Type | Input | Dashboard use |
+|---|---|---|---|
+| Temperature soft-sensor | Supervised regression using Random Forest | Voltage, current, derived power, and time | Temperature gauge and over-temperature alerts |
+| Anomaly detector | Unsupervised Isolation Forest | Voltage, current, derived power, and predicted temperature | Anomaly status and alerts |
 
-1. 🟢 **LIVE (ThingSpeak)**: If fresh data arrives from ThingSpeak, the system scales the pack-level data down to cell-level, runs inference, and displays a green "Live" badge.
-2. 🟡 **REPLAY (Demo Mode)**: If live data is unavailable, it automatically falls back to streaming a seeded, realistic charge-cycle from a local CSV (`nev_battery_charging.csv`). This is your interview safety-net!
-3. 🔴 **LAST-KNOWN**: If the system detects a stall, it simply serves the most recent stored DB row and turns the badge Red, showing exactly how stale the data is.
+The Render build downloads the NASA Li-ion Battery Aging dataset, trains these two models, and writes the generated model files to `ml/models/`. The raw training dataset is intentionally not committed to Git.
 
----
+## Repository layout
 
-## 🎙️ Interview Talking Points
+| Path | Purpose |
+|---|---|
+| `ml/` | Dataset download, feature preparation, model training, and runtime inference |
+| `webdev/backend/` | FastAPI service, scheduled ingestion, replay fallback, database models, and alerts |
+| `webdev/frontend/` | Vite/React dashboard for telemetry, charts, model information, and architecture |
+| `render.yaml` | Render build and start commands |
+| `.github/workflows/keep-warm.yml` | Scheduled health checks that reduce Render free-tier cold starts |
 
-### 1. The Machine Learning Pipeline (`ml/`)
-- **What it does**: We trained 3 models on NASA Li-ion battery datasets: a Temperature Soft-Sensor, an Anomaly Detector, and a Battery Health Classifier.
-- **Why it matters**: We don't rely on physical temperature sensors. The soft-sensor *predicts* temperature entirely from the electrical signals (Voltage, Current, Time). This predicted temperature is then fed into the Anomaly model.
-- **The "Pack to Cell" fix**: The ML models were trained on 3.7V cell data, but our live ThingSpeak data is ~390V pack data. Before running inference on live data, the backend normalizes the Pack data down to Cell-level by dividing by the number of series/parallel cells.
+## Local development
 
-### 2. The Backend (`webdev/backend/`)
-- **What it does**: A high-performance FastAPI application connected to a PostgreSQL database using SQLAlchemy.
-- **Why it matters**: It acts as a strict boundary between ThingSpeak and the Frontend. The React app *never* talks to ThingSpeak directly. This allows us to persist every single reading locally and run heavy ML inference on the server without freezing the user's browser.
-- **The Schema**: 4 simple tables: `channels` (hides credentials), `readings` (raw telemetry), `predictions` (the ML output), and `alerts` (system warnings).
+Install the backend dependencies and start the API from its directory:
 
-### 3. The Frontend (`webdev/frontend/`)
-- **What it does**: A React Single Page Application (SPA) built with Vite, styled with Tailwind CSS v4, and using Framer Motion for elegant entrance animations.
-- **Why it matters**: It's completely decoupled from the backend. It just polls the FastAPI endpoints (`/api/readings/latest`). It uses a strict, premium "shadcn" aesthetic (Zinc dark mode) for a highly professional look, far beyond standard bootstrap dashboards.
+```bash
+cd webdev/backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
 
----
+The backend defaults to SQLite and replay mode, so no database or ThingSpeak account is required for a local demo. To train the models locally, run the following from `ml/`:
 
-## 🚀 Deployment Guide
+```bash
+pip install -r requirements.txt
+python get_data.py
+python train.py
+```
 
-Everything is configured to deploy for free across 3 platforms: **Neon** (Database), **Render** (Backend), and **Vercel** (Frontend).
+In another terminal, install and start the frontend:
 
-### 1. Neon (PostgreSQL Database)
-1. Go to [neon.tech](https://neon.tech/) and sign up.
-2. Create a new project (e.g., `ev-wpt-db`).
-3. On the dashboard, find your **Connection String** (it starts with `postgresql://`). Copy this.
+```bash
+cd webdev/frontend
+npm install
+npm run dev
+```
 
-### 2. Render (Backend API)
-1. Go to [render.com](https://render.com/) and sign up with GitHub.
-2. Click **New +** -> **Web Service**.
-3. Connect your GitHub repository.
-4. Render will automatically read the `render.yaml` file in this repository and configure everything!
-5. **CRITICAL**: Go to the "Environment" tab of your new Web Service on Render and add the following Environment Variables:
-   - `DATABASE_URL` = (Paste your Neon connection string here)
-   - `THINGSPEAK_CHANNEL` = (Your ThingSpeak Channel ID, e.g., `3311497`)
-   - `THINGSPEAK_READ_KEY` = (Your ThingSpeak Read API Key)
-6. Click Save. Render will build the project, train the ML models, and start FastAPI. Copy your Render URL (e.g., `https://ev-wpt-api.onrender.com`).
+The Vite development server proxies `/api` requests to `http://localhost:8000`.
 
-### 3. Vercel (Frontend Dashboard)
-1. Go to [vercel.com](https://vercel.com/) and sign up with GitHub.
-2. Click **Add New Project** and select this GitHub repository.
-3. In the "Framework Preset" dropdown, Vercel should auto-detect **Vite**.
-4. **Root Directory**: Click Edit and type `webdev/frontend`. This tells Vercel where the React app lives.
-5. Expand "Environment Variables" and add:
-   - `VITE_API_URL` = (Paste your Render backend URL here, e.g., `https://ev-wpt-api.onrender.com`)
-6. Click **Deploy**.
+## Deployment
 
-🎉 You are live!
+The intended deployment uses Neon for PostgreSQL, Render for the FastAPI backend, and Vercel for the frontend.
+
+### Render backend
+
+Create a Render web service connected to this repository. Render reads `render.yaml`, installs both dependency manifests, downloads the training data, trains the two models, and starts Uvicorn. Configure these environment variables in Render:
+
+```text
+DATABASE_URL=your Neon PostgreSQL connection string
+THINGSPEAK_CHANNEL=your optional ThingSpeak channel ID
+THINGSPEAK_READ_KEY=your optional ThingSpeak read key
+```
+
+### Vercel frontend
+
+Set the Vercel root directory to `webdev/frontend` and configure the frontend with the deployed Render URL:
+
+```text
+VITE_API_BASE=https://your-render-service.onrender.com
+```
+
+The frontend reads `VITE_API_BASE`; `VITE_API_URL` is not used by the application.
+
+## API endpoints
+
+The backend exposes `/health`, `/api/readings/latest`, `/api/readings?limit=`, `/api/alerts?limit=`, and `/api/analytics/summary`. The frontend polls these endpoints every three seconds.
+
+## Live deployment
+
+The project is available at [wpt-iot.vercel.app](https://wpt-iot.vercel.app).
