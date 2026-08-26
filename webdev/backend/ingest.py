@@ -189,4 +189,7 @@ def ensure_fresh():
         if now - _last_refresh_request < max(1, config.TICK_SECONDS):
             return
         _last_refresh_request = now
-    tick()
+
+    # Do not make the dashboard wait for a ThingSpeak timeout or database write.
+    # The next poll will observe the newly persisted reading.
+    threading.Thread(target=tick, name="api-refresh", daemon=True).start()
