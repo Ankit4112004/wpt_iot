@@ -19,7 +19,7 @@ from sqlalchemy.orm import joinedload
 
 import config
 from db import SessionLocal, init_db, Channel, Reading, Prediction, Alert
-from ingest import tick
+from ingest import ensure_fresh, tick
 from inference import models_ready
 
 scheduler = BackgroundScheduler(daemon=True)
@@ -64,7 +64,11 @@ def health():
 
 @app.get("/api/readings/latest")
 def latest_reading():
-    """Newest reading + its ML prediction + how stale it is (for the 'last updated' label)."""
+    """Newest reading plus its prediction and freshness information."""
+    # In replay mode, make a normal dashboard poll advance the demo stream even if
+    # the hosting platform pauses the in-process scheduler thread.
+    if not (config.THINGSPEAK_CHANNEL and config.THINGSPEAK_READ_KEY):
+        ensure_fresh()
     with SessionLocal() as s:
         r = s.scalar(select(Reading).options(joinedload(Reading.prediction)).order_by(desc(Reading.id)).limit(1))
         if not r:

@@ -2,12 +2,24 @@
 // In dev, BASE is "" and Vite proxies /api to localhost:8000.
 // In prod, set VITE_API_BASE to the deployed backend URL (e.g. the Render URL).
 const BASE = import.meta.env.VITE_API_BASE || "";
+const REQUEST_TIMEOUT_MS = 8000;
 
 async function getJSON(path) {
-  const res = await fetch(BASE + path);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.json();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(BASE + path, {
+      cache: "no-store",
+      headers: { "Cache-Control": "no-cache" },
+      signal: controller.signal,
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  } finally {
+    clearTimeout(timeout);
+  }
 }
+
 
 export const api = {
   latest: () => getJSON("/api/readings/latest"),

@@ -16,6 +16,7 @@ This is a simple in-process scheduled task (APScheduler) — NOT a message queue
 reading every few seconds, a queue like Kafka would be massive over-engineering.
 """
 
+import threading
 import time
 from datetime import datetime, timezone
 
@@ -37,6 +38,9 @@ _ALERT_GAP = 20.0
 
 
 _charge_start_ts = None
+_tick_lock = threading.Lock()
+_refresh_lock = threading.Lock()
+_last_refresh_request = 0.0
 
 def _fetch_thingspeak():
     """
@@ -120,8 +124,8 @@ def _maybe_alert(session, reading, pred):
         _alert_cooldown["anomaly"] = now
 
 
-def tick():
-    """One ingestion cycle. Called by the scheduler."""
+def _tick_once():
+    """One ingestion cycle."""
     resolved = _resolve_source()
     if resolved is None:
         return  # last-known mode: nothing new to store this tick
@@ -163,3 +167,26 @@ def tick():
         print("ingest tick error:", e)
     finally:
         session.close()
+
+
+def tick():
+    """Run one ingestion cycle, serialized against API-triggered refreshes."""
+    with _tick_lock:
+        return _tick_once()
+
+
+def ensure_fresh():
+    """Advance the source when the last refresh request is older than one tick.
+
+    The scheduler remains the primary mechanism. This lightweight guard makes the
+    dashboard resilient on hosts that pause or delay background threads: a normal
+    latest-reading request can restart replay progress without creating duplicate
+    rows for every API call.
+    """
+    global _last_refresh_request
+    now = time.monotonic()
+    with _refresh_lock:
+        if now - _last_refresh_request < max(1, config.TICK_SECONDS):
+            return
+        _last_refresh_request = now
+    tick()

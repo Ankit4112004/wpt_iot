@@ -48,13 +48,29 @@ export default function Dashboard() {
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setIsFetching(true);
     try {
-      const [l, s, a, sum] = await Promise.all([
-        api.latest(), api.series(120), api.alerts(), api.summary(),
-      ]);
-      setLatest(l); setAlerts(a); setSummary(sum); setOnline(true);
-      setSeries(s.map((r) => ({ ...r, t: hhmmss(r.ts) })));
-      setBaseAgo(l?.last_updated_seconds || 0);
-      setLocalFetchTime(Date.now());
+      const [latestResult, seriesResult, alertsResult, summaryResult] =
+        await Promise.allSettled([
+          api.latest(),
+          api.series(120),
+          api.alerts(),
+          api.summary(),
+        ]);
+
+      if (latestResult.status === "fulfilled") {
+        const l = latestResult.value;
+        setLatest(l);
+        setOnline(true);
+        setBaseAgo(l?.last_updated_seconds || 0);
+        setLocalFetchTime(Date.now());
+      } else {
+        setOnline(false);
+      }
+
+      if (seriesResult.status === "fulfilled") {
+        setSeries(seriesResult.value.map((r) => ({ ...r, t: hhmmss(r.ts) })));
+      }
+      if (alertsResult.status === "fulfilled") setAlerts(alertsResult.value);
+      if (summaryResult.status === "fulfilled") setSummary(summaryResult.value);
     } catch {
       setOnline(false);
     } finally {
